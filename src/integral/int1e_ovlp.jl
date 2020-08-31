@@ -1,6 +1,8 @@
 module Int1e_ovlp
-include("../mole/mole.jl")
-using .Mole
+#include("../mole/mole.jl")
+
+using JuliaSCF.Mole
+export get_ovlp
 
 function S_ij(I::Int, J::Int, Ax::Float64, Bx::Float64, ai::Float64, bi::Float64)
     p = ai + bi
@@ -148,14 +150,10 @@ function get_ovlp(mol::Molecule)
             lb = basis[j].orb_l
             
             if !check[i,j]
-                #@show basis[i]
-                #@show basis[j]
-                #println()
                 check[i,j] = check[j,i] = true
                 Slm = S_lm(basis[i], basis[j])
                 for ind_a = 0:length(basis[i].d_array)-1, ind_b = 0:length(basis[j].d_array)-1
                     for k = 0:2*la, l = 0:2*lb
-                        #println(ind_i + ind_a*(2la+1) + change[la+1][k+1]," " ,ind_j + ind_b*(2lb+1) + change[lb+1][l+1])
                         if i == j
                             S[ind_i + ind_a*(2la+1) + change[la+1][k+1], ind_j + ind_b*(2lb+1) + change[lb+1][l+1]] = Slm[ind_a+1,ind_b+1,k+1,l+1]
                         else
@@ -172,8 +170,4 @@ function get_ovlp(mol::Molecule)
     return S
 end
 
-m = Molecule([atom("Br",[0.0,0.0,-0.7]), atom("Br",[0.0,0.0,+0.7]), atom("Br", [0,0,-1.4]), atom("Br", [0,0,1.4]), atom("Br", [0,0,0])], "ccpvdz")
-
-@time S = get_ovlp(m)
-#@show S
 end

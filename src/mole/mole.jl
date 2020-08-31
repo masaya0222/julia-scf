@@ -1,7 +1,7 @@
 module Mole
-include("../basis/tools.jl")
+#include("../basis/tools.jl")
 include("element_data.jl")
-using .Tools
+using JuliaSCF.Tools
 using .Element: ELEMENTS_PROTON
 
 export orb_detail, atom, Molecule
@@ -57,14 +57,23 @@ end
 
 function format_basis(_atom::atom, _orb_info_vec::Vector{Tools.orb_info})
     convert_l = Dict([('S', 0), ('P', 1), ('D', 2)])
-    res = Vector{orb_detail}()
+    res_s = Vector{orb_detail}()
+    res_p = Vector{orb_detail}()
+    res_d = Vector{orb_detail}()
+    res_spd = [res_s, res_p, res_d]
     for b = _orb_info_vec
         if b.orb_l =="SP"
             for (i,l) = enumerate(b.orb_l)
-                push!(res, orb_detail(_atom.cord, convert_l[l], b.α_array, [b.d_array[i]]))
+                push!(res_spd[convert_l[l]+1], orb_detail(_atom.cord, convert_l[l], b.α_array, [b.d_array[i]]))
             end
         else
-            push!(res, orb_detail(_atom.cord, convert_l[b.orb_l[1]], b.α_array, b.d_array))
+            push!(res_spd[convert_l[b.orb_l[1]]+1], orb_detail(_atom.cord, convert_l[b.orb_l[1]], b.α_array, b.d_array))
+        end
+    end
+    res = Vector{orb_detail}()
+    for r = res_spd
+        if !isempty(r)
+            append!(res, r)
         end
     end
     return res

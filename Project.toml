@@ -4,6 +4,7 @@ authors = ["masaya <hagai.masaya@c.mbox.nagoya-u.ac.jp>"]
 version = "0.1.0"
 
 [deps]
+PyCall = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
 Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
 
 [extras]
