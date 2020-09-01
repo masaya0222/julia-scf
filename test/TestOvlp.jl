@@ -49,10 +49,11 @@ m_IH = Molecule([atom("I",[x1,y1,z1]), atom("H",[x2,y2,z2])], "sto3g")
             S1 = mol_H2.intor("int1e_ovlp")
             basis_a = orb_detail([0, 0,-0.7], 0, [3.425250914, 0.6239137298, 0.168855404], [[0.1543289673, 0.5353281423, 0.4446345422]])
             basis_b = orb_detail([0, 0, 0.7], 0, [3.425250914, 0.6239137298, 0.168855404], [[0.1543289673, 0.5353281423, 0.4446345422]])
-            S_aa = Int1e_ovlp.S_lm(basis_a, basis_a)
-            S_ab = Int1e_ovlp.S_lm(basis_a, basis_b)
-            S_ba = Int1e_ovlp.S_lm(basis_b, basis_a)
-            S_bb = Int1e_ovlp.S_lm(basis_b, basis_b)
+            C = m_H2.rotate_coef[1]
+            S_aa = Int1e_ovlp.S_lm(basis_a, basis_a,C,C)
+            S_ab = Int1e_ovlp.S_lm(basis_a, basis_b,C,C)
+            S_ba = Int1e_ovlp.S_lm(basis_b, basis_a,C,C)
+            S_bb = Int1e_ovlp.S_lm(basis_b, basis_b,C,C)
             
             @test isapprox([S_aa[1] S_ab[1]; S_ba[1] S_bb[1]],S1; rtol =1e-5)
         end
@@ -92,9 +93,5 @@ m_IH = Molecule([atom("I",[x1,y1,z1]), atom("H",[x2,y2,z2])], "sto3g")
         test_get_ovlp4()
     end
 
-    @testset "Multiplication2" begin
-        @test 1 * 1 == 1
-        @test 2 * 3 == 6
-    end
 end
 

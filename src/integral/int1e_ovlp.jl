@@ -1,7 +1,6 @@
 module Int1e_ovlp
-#include("../mole/mole.jl")
-
 using JuliaSCF.Mole
+
 export get_ovlp
 
 function S_ij(I::Int, J::Int, Ax::Float64, Bx::Float64, ai::Float64, bi::Float64)
@@ -57,7 +56,7 @@ function cont_Sij(basis_a::orb_detail, basis_b::orb_detail)
     return Sab
 end
 
-function S_lm(basis_a::orb_detail, basis_b::orb_detail)
+function S_lm(basis_a::orb_detail, basis_b::orb_detail, C_a::Array{Float64,4}, C_b::Array{Float64,4})
     Sab = cont_Sij(basis_a, basis_b)
     
     la = basis_a.orb_l
@@ -69,23 +68,8 @@ function S_lm(basis_a::orb_detail, basis_b::orb_detail)
 
     max_l = max(basis_a.orb_l, basis_b.orb_l)
     fact = [factorial(i) for i = 0:2*max_l]
-    comb = zeros(Int64, (max_l+1, max_l+1))
-    for i = 0:max_l, j = 0:max_l
-        comb[i+1,j+1] = binomial(i,j)
-    end
+    
     S_mamb = zeros(Float64, (length(da), length(db), 2*basis_a.orb_l+1, 2*basis_b.orb_l+1))
-    C_a = zeros(Float64, (la+1, div(la,2)+1, div(la,2)+1, la+1))
-    for ma_ = 0:la, t = 0:div(la,2), u = 0:div(la,2), v = 0:la
-        if la >=t >=u && la-t>=ma_+t && ma_>=v
-            C_a[ma_+1,t+1,u+1,v+1] = (-2(t%2)+1.0)*(1/4^t)*comb[la+1,t+1]*comb[la-t+1,ma_+t+1]*comb[t+1,u+1]*comb[ma_+1,v+1]
-        end
-    end
-    C_b = zeros(Float64, (lb+1, div(lb,2)+1, div(lb,2)+1, lb+1))
-    for mb_ = 0:lb, t = 0:div(lb,2), u = 0:div(lb,2), v = 0:lb
-        if lb >= t >=u && lb-t >= mb_+t && mb_ >= v
-            C_b[mb_+1,t+1,u+1,v+1] = (-2(t%2)+1.0)*(1/4^t)*comb[lb+1,t+1]*comb[lb-t+1,mb_+t+1]*comb[t+1,u+1]*comb[mb_+1,v+1]
-        end
-    end
     
     for i = 0:2la, j = 0:2lb
         ma = i-la; mb = j-lb
@@ -136,7 +120,6 @@ end
 
 function get_ovlp(mol::Molecule)
     basis = mol.basis
-    #@show basis
     S = zeros(Float64, (mol.basis_num, mol.basis_num))
     basis_len = length(basis)
     check = zeros(Bool, (basis_len, basis_len))
@@ -151,7 +134,7 @@ function get_ovlp(mol::Molecule)
             
             if !check[i,j]
                 check[i,j] = check[j,i] = true
-                Slm = S_lm(basis[i], basis[j])
+                Slm = S_lm(basis[i], basis[j], mol.rotate_coef[la+1], mol.rotate_coef[lb+1])
                 for ind_a = 0:length(basis[i].d_array)-1, ind_b = 0:length(basis[j].d_array)-1
                     for k = 0:2*la, l = 0:2*lb
                         if i == j

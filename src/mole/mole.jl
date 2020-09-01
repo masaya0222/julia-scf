@@ -15,7 +15,11 @@ end
 
 struct atom
     symbol::String
+    atomic_num::Int
     cord::Vector{Float64}
+    function atom(_symbol::String, _cord::Vector{Float64})
+        new(_symbol, ELEMENTS_PROTON[_symbol], _cord)
+    end
 end
 
 mutable struct Molecule
@@ -28,6 +32,7 @@ mutable struct Molecule
     can_rhf::Bool
     occ::Vector{Int}
     occ_num::Int
+    rotate_coef::Vector{Array{Float64, 4}}
 
     function Molecule(_atoms::Vector{atom}, _basis_name::String, _charge=0::Int)
         basis = Vector{orb_detail}()
@@ -38,7 +43,8 @@ mutable struct Molecule
         _basis_num = count_basis(basis)
         _elec_num = sum([ELEMENTS_PROTON[_atom.symbol] for _atom = _atoms]) -_charge
         _occ, _occ_num = make_occ(_basis_num, _elec_num)
-        new(_atoms, _charge, _basis_name, basis, _basis_num,_elec_num, true, _occ, _occ_num)
+        _rotate_coef = make_rotate_coef(basis)
+        new(_atoms, _charge, _basis_name, basis, _basis_num,_elec_num, true, _occ, _occ_num, _rotate_coef)
     end
 end
 
@@ -86,6 +92,29 @@ function count_basis(_basis::Vector{orb_detail})
         num += (b.orb_l*2+1)*length(b.d_array)
     end
     return num
+end
+function make_rotate_coef(_basis::Vector{orb_detail})
+    max_l = 0
+    res = Vector{Array{Float64, 4}}()
+    for b = _basis
+        max_l = max(max_l, b.orb_l)
+    end
+
+    comb = zeros(Int64, (max_l+1, max_l+1))
+    for i = 0:max_l, j = 0:max_l
+        comb[i+1,j+1] = binomial(i,j)
+    end
+
+    for l = 0:max_l
+        C = zeros(Float64, (l+1, div(l,2)+1, div(l,2)+1, l+1))
+        for m_ = 0:l, t = 0:div(l,2), u = 0:div(l,2), v = 0:l
+            if l >=t >=u && l-t>=m_+t && m_>=v
+                C[m_+1,t+1,u+1,v+1] = (-2(t%2)+1.0)*(1/4^t)*comb[l+1,t+1]*comb[l-t+1,m_+t+1]*comb[t+1,u+1]*comb[m_+1,v+1]
+            end
+        end
+        push!(res, C)
+    end
+    return res
 end
 
 end
