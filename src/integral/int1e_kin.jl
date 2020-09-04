@@ -2,6 +2,8 @@ module Int1e_kin
 using JuliaSCF.Mole
 using JuliaSCF.Integral.Int1e_ovlp: S_ij
 
+export get_kin
+
 function T_ij(I::Int, J::Int, Ax::Float64, Bx::Float64, ai::Float64, bi::Float64)
     p = ai + bi
     mu = ai*bi/p
@@ -142,6 +144,8 @@ function get_kin(mol::Molecule)
                             T[ind_i + ind_a*(2la+1) + change[la+1][k+1], ind_j + ind_b*(2lb+1) + change[lb+1][l+1]] = Tlm[ind_a+1,ind_b+1,k+1,l+1]
                             T[ind_j + ind_b*(2lb+1) + change[lb+1][l+1], ind_i + ind_a*(2la+1) + change[la+1][k+1]] = Tlm[ind_a+1,ind_b+1,k+1,l+1]
                         end
+                        T[ind_i + ind_a*(2la+1) + change[la+1][k+1], ind_j + ind_b*(2lb+1) + change[lb+1][l+1]] = Tlm[ind_a+1,ind_b+1,k+1,l+1]
+                        T[ind_j + ind_b*(2lb+1) + change[lb+1][l+1], ind_i + ind_a*(2la+1) + change[la+1][k+1]] = T[ind_i + ind_a*(2la+1) + change[la+1][k+1], ind_j + ind_b*(2lb+1) + change[lb+1][l+1]]
                     end
                 end
             end

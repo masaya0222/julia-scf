@@ -225,12 +225,8 @@ function get_v1e(mol::Molecule)
                 
                 for ind_a = 0:length(basis[i].d_array)-1, ind_b = 0:length(basis[j].d_array)-1
                     for k = 0:2*la, l = 0:2*lb
-                        if i == j
-                            V1e[ind_i + ind_a*(2la+1) + change[la+1][k+1], ind_j + ind_b*(2lb+1) + change[lb+1][l+1]] = V1elm[ind_a+1,ind_b+1,k+1,l+1]
-                        else
-                            V1e[ind_i + ind_a*(2la+1) + change[la+1][k+1], ind_j + ind_b*(2lb+1) + change[lb+1][l+1]] = V1elm[ind_a+1,ind_b+1,k+1,l+1]
-                            V1e[ind_j + ind_b*(2lb+1) + change[lb+1][l+1], ind_i + ind_a*(2la+1) + change[la+1][k+1]] = V1elm[ind_a+1,ind_b+1,k+1,l+1]
-                        end
+                        V1e[ind_i + ind_a*(2la+1) + change[la+1][k+1], ind_j + ind_b*(2lb+1) + change[lb+1][l+1]] = V1elm[ind_a+1,ind_b+1,k+1,l+1]
+                        V1e[ind_j + ind_b*(2lb+1) + change[lb+1][l+1], ind_i + ind_a*(2la+1) + change[la+1][k+1]] = V1e[ind_i + ind_a*(2la+1) + change[la+1][k+1], ind_j + ind_b*(2lb+1) + change[lb+1][l+1]]
                     end
                 end
             end

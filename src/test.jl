@@ -10,5 +10,6 @@ module test
     a = [1 2;3 4]
     push!(v,a)
     @show v
+    @show max(1,2,3,4)
 
 end
