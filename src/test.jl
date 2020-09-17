@@ -2,14 +2,16 @@ module test
     using JuliaSCF.Mole
     using JuliaSCF.Integral
     using SpecialFunctions
-    m = Molecule([atom("I",[0,0,-0.7]) ,atom("I",[0,0,+0.7]),atom("I",[0,0,-1.4]) ,atom("I",[0,0,+1.4])], "sto3g")
-    @time S = Int1e_ovlp.get_ovlp(m)
-    
-    @show SpecialFunctions.gamma(2)
-    v = Vector{Array{Int,2}}()
-    a = [1 2;3 4]
-    push!(v,a)
-    @show v
-    @show max(1,2,3,4)
 
+    @show gamma
+
+    a = [1,2,3,4,5]
+    b  = view(a,2:length(a))
+    @show b
+    b[1] = 3
+    @show b 
+    @show a
+    m = Molecule([atom("C",[0.0,0.0,-0.7]),atom("C",[0.0,0.0,0.7]),atom("C",[0.0,-0.7,0.0]),atom("C",[0.0,0.7,0.0]), atom("C",[-0.7,0.0,0.0]),atom("C",[0.7,0.0,0.0]), atom("C",[0.0,0.0,-1.4]),atom("C",[0.0,0.0,1.4])], "sto3g")
+    @time v = Int2e.get_v2e(m)
+    @show size(v)
 end

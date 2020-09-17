@@ -4,8 +4,9 @@ include("basis/tools.jl")
 
 include("mole/mole.jl")
 
-include("integral/integral.jl")
+include("lib/lib.jl")
 
+include("integral/integral.jl")
 
 end # module
 
