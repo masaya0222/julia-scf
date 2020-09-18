@@ -1,3 +1,4 @@
+
 a = [i for i in range(5)]
 print(a)
 b = a[2:4]

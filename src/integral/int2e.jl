@@ -3,7 +3,7 @@ using JuliaSCF.Mole
 using JuliaSCF.Integral.Int1e_nuc: Fn
 using JuliaSCF.Lib.Libint
 
-export get_v2e
+export get_v2e, get_v2e_single
 
 function INT_NCART(am::Int)
     return div((am+1)*(am+2),2)
@@ -223,7 +223,7 @@ function get_v2e(mol::Molecule)
     basis_len = length(basis)
     check = zeros(Bool, (basis_len, basis_len, basis_len, basis_len))
     change = [[0],[1,2,0],[0,1,2,3,4]]
-
+    Tasks = Vector{Vector{Int}}(undef, basis_len^4)
     ind_i = 1
     I1 = 0;J1 = 0;I2 = 0; J2 = 0
     for i = 1:basis_len
@@ -237,6 +237,92 @@ function get_v2e(mol::Molecule)
                     I2 = basis[k].orb_l; J2 = basis[l].orb_l
                     if !check[i,j,k,l] && I1 >= J1 && I2 >= J2 && I2+J2 >= I1+J1
                         num += 1
+                        check[i,j,k,l] = check[i,j,l,k] = check[j,i,k,l] = check[j,i,l,k] = true
+                        check[k,l,i,j] = check[k,l,j,i] = check[l,k,i,j] = check[l,k,j,i] = true
+                        Tasks[num] = [i,j,k,l,I1,J1,I2,J2]                   
+                    end
+                    ind_l += (2J2+1)*length(basis[l].d_array)
+                end
+                ind_k += (2I2+1)*length(basis[k].d_array)
+            end
+            ind_j += (2J1+1)*length(basis[j].d_array)
+        end
+        ind_i += (2I1+1)*length(basis[i].d_array)
+    end
+    results = Vector{Array{Float64, 8}}(undef, num)
+    Threads.@threads for ind = 1:num
+        results[ind] = V2e_lm(basis[Tasks[ind][1]],basis[Tasks[ind][2]],basis[Tasks[ind][3]],basis[Tasks[ind][4]],mol.rotate_coef[Tasks[ind][5]+1],mol.rotate_coef[Tasks[ind][6]+1],mol.rotate_coef[Tasks[ind][7]+1],mol.rotate_coef[Tasks[ind][8]+1])
+    end
+    
+    check = zeros(Bool, (basis_len, basis_len, basis_len, basis_len))
+    num = 0
+    ind_i = 1
+    I1 = 0;J1 = 0;I2 = 0; J2 = 0
+    for i = 1:basis_len
+        ind_j = 1
+        for j = 1:basis_len
+            ind_k = 1
+            for k = 1:basis_len
+                ind_l = 1
+                for l = 1:basis_len
+                    I1 = basis[i].orb_l; J1 = basis[j].orb_l
+                    I2 = basis[k].orb_l; J2 = basis[l].orb_l
+                    if !check[i,j,k,l] && I1 >= J1 && I2 >= J2 && I2+J2 >= I1+J1
+                        num += 1
+                        check[i,j,k,l] = check[i,j,l,k] = check[j,i,k,l] = check[j,i,l,k] = true
+                        check[k,l,i,j] = check[k,l,j,i] = check[l,k,i,j] = check[l,k,j,i] = true
+                        Tasks[num] = [i,j,k,l,I1,J1,I2,J2]
+                        V2elm = results[num]
+                        for ind_a=0:length(basis[i].d_array)-1, ind_b=0:length(basis[j].d_array)-1, ind_c=0:length(basis[k].d_array)-1, ind_d=0:length(basis[l].d_array)-1 
+                            for ma=0:2I1, mb=0:2J1, mc=0:2I2, md=0:2J2
+                                ans = V2elm[ind_a+1,ind_b+1,ind_c+1,ind_d+1,ma+1,mb+1,mc+1,md+1]
+                                ind_1 = ind_i+ind_a*(2I1+1)+change[I1+1][ma+1]
+                                ind_2 = ind_j+ind_b*(2J1+1)+change[J1+1][mb+1]
+                                ind_3 = ind_k+ind_c*(2I2+1)+change[I2+1][mc+1]
+                                ind_4 = ind_l+ind_d*(2J2+1)+change[J2+1][md+1]
+                                V2e[ind_1,ind_2,ind_3,ind_4] = ans
+
+                                V2e[ind_1,ind_2,ind_4,ind_3] = ans
+                                V2e[ind_2,ind_1,ind_3,ind_4] = ans
+                                V2e[ind_2,ind_1,ind_4,ind_3] = ans
+
+                                V2e[ind_3,ind_4,ind_1,ind_2] = ans
+                                V2e[ind_3,ind_4,ind_2,ind_1] = ans
+                                V2e[ind_4,ind_3,ind_1,ind_2] = ans
+                                V2e[ind_4,ind_3,ind_2,ind_1] = ans
+                            end
+                        end                 
+                    end
+                    ind_l += (2J2+1)*length(basis[l].d_array)
+                end
+                ind_k += (2I2+1)*length(basis[k].d_array)
+            end
+            ind_j += (2J1+1)*length(basis[j].d_array)
+        end
+        ind_i += (2I1+1)*length(basis[i].d_array)
+    end
+    return V2e
+end
+
+function get_v2e_single(mol::Molecule)
+    basis = mol.basis
+    V2e = zeros(Float64, (mol.basis_num, mol.basis_num, mol.basis_num, mol.basis_num))
+    basis_len = length(basis)
+    check = zeros(Bool, (basis_len, basis_len, basis_len, basis_len))
+    change = [[0],[1,2,0],[0,1,2,3,4]]
+    
+    ind_i = 1
+    I1 = 0;J1 = 0;I2 = 0; J2 = 0
+    for i = 1:basis_len
+        ind_j = 1
+        for j = 1:basis_len
+            ind_k = 1
+            for k = 1:basis_len
+                ind_l = 1
+                for l = 1:basis_len
+                    I1 = basis[i].orb_l; J1 = basis[j].orb_l
+                    I2 = basis[k].orb_l; J2 = basis[l].orb_l
+                    if !check[i,j,k,l] && I1 >= J1 && I2 >= J2 && I2+J2 >= I1+J1
                         check[i,j,k,l] = check[i,j,l,k] = check[j,i,k,l] = check[j,i,l,k] = true
                         check[k,l,i,j] = check[k,l,j,i] = check[l,k,i,j] = check[l,k,j,i] = true
                         
@@ -260,7 +346,7 @@ function get_v2e(mol::Molecule)
                                 V2e[ind_4,ind_3,ind_1,ind_2] = ans
                                 V2e[ind_4,ind_3,ind_2,ind_1] = ans
                             end
-                        end                      
+                        end
                     end
                     ind_l += (2J2+1)*length(basis[l].d_array)
                 end
@@ -270,7 +356,6 @@ function get_v2e(mol::Molecule)
         end
         ind_i += (2I1+1)*length(basis[i].d_array)
     end
-    return V2e
 end
-
+    
 end
