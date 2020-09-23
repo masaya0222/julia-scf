@@ -8,5 +8,8 @@ include("lib/lib.jl")
 
 include("integral/integral.jl")
 
+include("hf/diis.jl")
+include("hf/hf.jl")
+
 end # module
 

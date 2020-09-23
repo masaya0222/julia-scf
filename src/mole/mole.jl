@@ -3,7 +3,7 @@ include("element_data.jl")
 using JuliaSCF.Tools
 using .Element: ELEMENTS_PROTON
 
-export orb_detail, atom, Molecule
+export orb_detail, atom, Molecule, make_atom_occ
 
 struct orb_detail 
     cord::Vector{Float64}
@@ -26,10 +26,11 @@ mutable struct Molecule
     charge::Int
     basis_name::String
     basis::Vector{orb_detail}
+    basis_::Vector{orb_detail}
     basis_num::Int
     elec_num::Int
     can_rhf::Bool
-    occ::Vector{Int}
+    occ::Vector{Float64}
     occ_num::Int
     rotate_coef::Vector{Array{Float64, 4}}
 
@@ -39,16 +40,20 @@ mutable struct Molecule
         for _atom in _atoms
             append!(basis, format_basis(_atom, all_basis[_atom.symbol]))
         end
+        basis_ = Vector{orb_detail}()
+        for _atom in _atoms
+            append!(basis_, format_basis_(_atom, all_basis[_atom.symbol]))
+        end
         _basis_num = count_basis(basis)
         _elec_num = sum([ELEMENTS_PROTON[_atom.symbol] for _atom = _atoms]) -_charge
         _occ, _occ_num = make_occ(_basis_num, _elec_num)
         _rotate_coef = make_rotate_coef(basis)
-        new(_atoms, _charge, _basis_name, basis, _basis_num,_elec_num, true, _occ, _occ_num, _rotate_coef)
+        new(_atoms, _charge, _basis_name, basis, basis_, _basis_num,_elec_num, true, _occ, _occ_num, _rotate_coef)
     end
 end
 
 function make_occ(basis_num::Int, elec_num::Int, )
-    occ = zeros(Int, basis_num)
+    occ = zeros(Float64, basis_num)
     occ_num = div(elec_num,2)
     for i = 1:occ_num
         occ[i] = 2
@@ -56,6 +61,22 @@ function make_occ(basis_num::Int, elec_num::Int, )
     if elec_num % 2 == 1
         occ_num += 1
         occ[occ_num] = 1
+    end
+    return (occ, occ_num)
+end
+
+function make_atom_occ(mol::Molecule)
+    occ = zeros(Float64, mol.basis_num)
+    elec_num = mol.elec_num
+    orb_occ = [1,1,3,1,3,1,5,3,1,5,3] #[1s,2s,2p,3s,3p,4s,3d,4p,5s,4d,5p]
+    occ_num = 0
+    for i in orb_occ
+        occ[begin+occ_num:occ_num+i] = [min(2.0,elec_num/i) for j = 1:i]
+        elec_num -= min(2.0,elec_num/i)*i
+        occ_num += i
+        if elec_num == 0.0
+            break
+        end
     end
     return (occ, occ_num)
 end
@@ -73,6 +94,40 @@ function format_basis(_atom::atom, _orb_info_vec::Vector{Tools.orb_info})
             end
         else
             push!(res_spd[convert_l[b.orb_l[1]]+1], orb_detail(_atom.cord, convert_l[b.orb_l[1]], b.α_array, b.d_array))
+        end
+    end
+    res = Vector{orb_detail}()
+    for r = res_spd
+        if !isempty(r)
+            append!(res, r)
+        end
+    end
+    return res
+end
+
+function format_basis_(_atom::atom, _orb_info_vec::Vector{Tools.orb_info})
+    convert_l = Dict([('S', 0), ('P', 1), ('D', 2)])
+    res_s = Vector{orb_detail}()
+    res_p = Vector{orb_detail}()
+    res_d = Vector{orb_detail}()
+    res_spd = [res_s, res_p, res_d]
+    for b = _orb_info_vec
+        if b.orb_l =="SP"
+            for (i,l) = enumerate(b.orb_l)
+                push!(res_spd[convert_l[l]+1], orb_detail(_atom.cord, convert_l[l], b.α_array, [b.d_array[i]]))
+            end
+        else
+            for d_array = b.d_array
+                a = Vector{Float64}()
+                d = Vector{Float64}()
+                for ind = 1:length(d_array)
+                    if d_array[ind] != 0.0
+                        append!(a, b.α_array[ind])
+                        append!(d, d_array[ind])
+                    end
+                end
+                push!(res_spd[convert_l[b.orb_l[1]]+1], orb_detail(_atom.cord, convert_l[b.orb_l[1]], a, [d]))
+            end
         end
     end
     res = Vector{orb_detail}()

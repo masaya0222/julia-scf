@@ -38,90 +38,86 @@ function cont_V2(basis_a::orb_detail, basis_b::orb_detail, basis_c::orb_detail, 
     size = INT_NCART(am1)*INT_NCART(am2)*INT_NCART(am3)*INT_NCART(am4)
     contV = Array{Vector{Float64},4}(undef, length(da),length(db),length(dc),length(dd))
     
-    for ind_a=1:length(da), ind_b=1:length(db),ind_c=1:length(dc), ind_d=1:length(dd)
-        nprim = 0
-        c1s = da[ind_a];c2s = db[ind_b]; c3s = dc[ind_c]; c4s = dd[ind_d]
-        for p1 = 1:nprim1
-            a1 = a1s[p1]
-            c1 = c1s[p1]
-            Na = (2*a1/pi)^(3/4)*sqrt(((4*a1)^am1)/w_fact[am1+1])
-            c1 *= Na
-            for p2 = 1:nprim2
-                a2 = a2s[p2]
-                c2 = c2s[p2]
-                zeta = a1 + a2
-                ooz = 1/zeta
-                oo2z = 1/(2*zeta)
-                P = (a1*A+a2*B)*ooz
-                PA = P - A
-                PB = P - B
-                Nb = (2*a2/pi)^(3/4)*sqrt(((4*a2)^am2)/w_fact[am2+1])
-               c2 *= Nb
+    
+    nprim = 0
+    c1s = da[1];c2s = db[1]; c3s = dc[1]; c4s = dd[1]
+    for p1 = 1:nprim1
+        a1 = a1s[p1]
+        c1 = c1s[p1]
+        Na = (2*a1/pi)^(3/4)*sqrt(((4*a1)^am1)/w_fact[am1+1])
+        c1 *= Na
+        for p2 = 1:nprim2
+            a2 = a2s[p2]
+            c2 = c2s[p2]
+            zeta = a1 + a2
+            ooz = 1/zeta
+            oo2z = 1/(2*zeta)
+            P = (a1*A+a2*B)*ooz
+            PA = P - A
+            PB = P - B
+            Nb = (2*a2/pi)^(3/4)*sqrt(((4*a2)^am2)/w_fact[am2+1])
+            c2 *= Nb
 
-                Sab = (pi*ooz)^(3/2)*exp(-a1*a2*ooz*AB2)*c1*c2
-                for p3 = 1:nprim3
-                    a3 = a3s[p3]
-                    c3 = c3s[p3]
-                    Nc = (2*a3/pi)^(3/4)*sqrt(((4*a3)^am3)/w_fact[am3+1])
-                    c3 *= Nc
-                    for p4 = 1:nprim4
-                        nprim += 1
-                        a4 = a4s[p4]
-                        c4 = c4s[p4]
-                        Nd = (2*a4/pi)^(3/4)*sqrt(((4*a4)^am4)/w_fact[am4+1])
-                        c4 *= Nd
-                        nu = a3 + a4
-                        oon = 1/nu
-                        oo2n = 1/(2*nu)
-                        oo2zn = 1/(2*(zeta+nu))
-                        rho = (zeta*nu)/(zeta+nu)
-                        oo2rho = 1/(2*rho)
-                        Q = (a3*C+a4*D)*oon
-                        QC = Q - C
-                        QD = Q - D
-                        PQ = P - Q
-                        PQ2 = PQ[1]^2+PQ[2]^2+PQ[3]^2
-                        W = (zeta*P+nu*Q)/(zeta+nu)
-                        WP = W - P
-                        WQ = W - Q
-                        for i = 1:3
-                            libint_.PrimQuartet[nprim].U[1,i] = PA[i]
-                            libint_.PrimQuartet[nprim].U[2,i] = PB[i]
-                            libint_.PrimQuartet[nprim].U[3,i] = QC[i]
-                            libint_.PrimQuartet[nprim].U[4,i] = QD[i]
-                            libint_.PrimQuartet[nprim].U[5,i] = WP[i]
-                            libint_.PrimQuartet[nprim].U[6,i] = WQ[i]
-                        end
-                        libint_.PrimQuartet[nprim].oo2z = oo2z
-                        libint_.PrimQuartet[nprim].oo2n = oo2n
-                        libint_.PrimQuartet[nprim].oo2zn = oo2zn
-                        libint_.PrimQuartet[nprim].poz = rho * ooz
-                        libint_.PrimQuartet[nprim].pon = rho * oon
-                        libint_.PrimQuartet[nprim].oo2p = oo2rho
-                        T = rho*PQ2
-                        
-                        fjt = [Fn(n,T) for n = 0:am]
-                            
-                        Scd = (pi*oon)^(3/2)*exp(-a3*a4*oon*CD2)*c3*c4
-                        val = 2*sqrt(rho/pi)*Sab*Scd
-                        libint_.PrimQuartet[nprim].F = fjt*val
+            Sab = (pi*ooz)^(3/2)*exp(-a1*a2*ooz*AB2)*c1*c2
+            for p3 = 1:nprim3
+                a3 = a3s[p3]
+                c3 = c3s[p3]
+                Nc = (2*a3/pi)^(3/4)*sqrt(((4*a3)^am3)/w_fact[am3+1])
+                c3 *= Nc
+                for p4 = 1:nprim4
+                    nprim += 1
+                    a4 = a4s[p4]
+                    c4 = c4s[p4]
+                    Nd = (2*a4/pi)^(3/4)*sqrt(((4*a4)^am4)/w_fact[am4+1])
+                    c4 *= Nd
+                    nu = a3 + a4
+                    oon = 1/nu
+                    oo2n = 1/(2*nu)
+                    oo2zn = 1/(2*(zeta+nu))
+                    rho = (zeta*nu)/(zeta+nu)
+                    oo2rho = 1/(2*rho)
+                    Q = (a3*C+a4*D)*oon
+                    QC = Q - C
+                    QD = Q - D
+                    PQ = P - Q
+                    PQ2 = PQ[1]^2+PQ[2]^2+PQ[3]^2
+                    W = (zeta*P+nu*Q)/(zeta+nu)
+                    WP = W - P
+                    WQ = W - Q
+                    for i = 1:3
+                        libint_.PrimQuartet[nprim].U[1,i] = PA[i]
+                        libint_.PrimQuartet[nprim].U[2,i] = PB[i]
+                        libint_.PrimQuartet[nprim].U[3,i] = QC[i]
+                        libint_.PrimQuartet[nprim].U[4,i] = QD[i]
+                        libint_.PrimQuartet[nprim].U[5,i] = WP[i]
+                        libint_.PrimQuartet[nprim].U[6,i] = WQ[i]
                     end
+                    libint_.PrimQuartet[nprim].oo2z = oo2z
+                    libint_.PrimQuartet[nprim].oo2n = oo2n
+                    libint_.PrimQuartet[nprim].oo2zn = oo2zn
+                    libint_.PrimQuartet[nprim].poz = rho * ooz
+                    libint_.PrimQuartet[nprim].pon = rho * oon
+                    libint_.PrimQuartet[nprim].oo2p = oo2rho
+                    T = rho*PQ2
+                    
+                    fjt = [Fn(n,T) for n = 0:am]
+                    Scd = (pi*oon)^(3/2)*exp(-a3*a4*oon*CD2)*c3*c4
+                    val = 2*sqrt(rho/pi)*Sab*Scd
+                    libint_.PrimQuartet[nprim].F = fjt*val
                 end
             end
-
-        end
-        if am == 0
-            temp = 0.0
-            for i = 1:nprim
-                temp += libint_.PrimQuartet[i].F[1]
-            end
-            contV[ind_a,ind_b,ind_c,ind_d] = [temp]
-        else
-            target_ints = build_eri[am1+1,am2+1,am3+1,am4+1](libint_,nprim)
-            contV[ind_a,ind_b,ind_c,ind_d] = libint_.int_stack[begin+target_ints:target_ints+size]
         end
     end
-    return contV
+    if am == 0
+        temp = 0.0
+        for i = 1:nprim
+            temp += libint_.PrimQuartet[i].F[1]
+        end
+        return [temp]
+    else
+        target_ints = build_eri[am1+1,am2+1,am3+1,am4+1](libint_,nprim)
+        return libint_.int_stack[begin+target_ints:target_ints+size]
+    end
 end
 
 function V2e_lm(basis_a::orb_detail, basis_b::orb_detail, basis_c::orb_detail, basis_d::orb_detail, C_a::Array{Float64,4}, C_b::Array{Float64,4}, C_c::Array{Float64,4}, C_d::Array{Float64,4})
@@ -141,7 +137,7 @@ function V2e_lm(basis_a::orb_detail, basis_b::orb_detail, basis_c::orb_detail, b
             [[5,4,3],[2,1],[0]] # for d 0 = index[2][2][0], 1 = index[2][1][1], 2 = index[2][1][0], 3 = index[2][0][2], 4 = index[2][0][1], 5 = index[2][0][2]
             ]
 
-    V2e_mamb = zeros(Float64, (length(da),length(db),length(dc),length(dd),2I1+1,2J1+1,2I2+1,2J2+1))
+    V2e_mamb = zeros(Float64, (2I1+1,2J1+1,2I2+1,2J2+1))
     
     for i=0:2I1, j=0:2J1, k=0:2I2, l=0:2J2
         ma = i-I1; mb = j-J1; mc = k-I2; md = l-J2
@@ -196,29 +192,29 @@ function V2e_lm(basis_a::orb_detail, basis_b::orb_detail, basis_c::orb_detail, b
                                 tmp += index[I2+1][pow_xc+1][pow_yc+1]*INT_NCART(J2)
                                 tmp += index[J2+1][pow_xd+1][pow_yd+1]
 
-                                for ind_a=1:length(da), ind_b=1:length(db) ,ind_c=1:length(dc), ind_d=1:length(dd)
-                                    V2e_mamb[ind_a,ind_b,ind_c,ind_d,i+1,j+1,k+1,l+1] += f*C_a[ma_+1,ta+1,ua+1,Int(floor(2*va_))+1] * 
-                                                                                        C_b[mb_+1,tb+1,ub+1,Int(floor(2*vb_))+1] * 
-                                                                                        C_c[mc_+1,tc+1,uc+1,Int(floor(2*vc_))+1] * 
-                                                                                        C_d[md_+1,td+1,ud+1,Int(floor(2*vd_))+1] * 
-                                                                                        V2e_abcd[ind_a,ind_b,ind_c,ind_d][tmp+1]
-                                end
+                                
+                                V2e_mamb[i+1,j+1,k+1,l+1] += f*C_a[ma_+1,ta+1,ua+1,Int(floor(2*va_))+1] * 
+                                                            C_b[mb_+1,tb+1,ub+1,Int(floor(2*vb_))+1] * 
+                                                            C_c[mc_+1,tc+1,uc+1,Int(floor(2*vc_))+1] * 
+                                                            C_d[md_+1,td+1,ud+1,Int(floor(2*vd_))+1] * 
+                                                            V2e_abcd[tmp+1]
+    
                             end
                         end
                     end
                 end
             end
         end
-        for ind_a=1:length(da),ind_b=1:length(db),ind_c=1:length(dc),ind_d=1:length(dd)
-            V2e_mamb[ind_a,ind_b,ind_c,ind_d,i+1,j+1,k+1,l+1] *= Nma*Nmb*Nmc*Nmd
-        end
+        
+        V2e_mamb[i+1,j+1,k+1,l+1] *= Nma*Nmb*Nmc*Nmd
+        
     end
     return V2e_mamb
 end
 
 function get_v2e(mol::Molecule)
+    basis = mol.basis_
     num = 0
-    basis = mol.basis
     V2e = zeros(Float64, (mol.basis_num, mol.basis_num, mol.basis_num, mol.basis_num))
     basis_len = length(basis)
     check = zeros(Bool, (basis_len, basis_len, basis_len, basis_len))
@@ -241,15 +237,15 @@ function get_v2e(mol::Molecule)
                         check[k,l,i,j] = check[k,l,j,i] = check[l,k,i,j] = check[l,k,j,i] = true
                         Tasks[num] = [i,j,k,l,I1,J1,I2,J2]                   
                     end
-                    ind_l += (2J2+1)*length(basis[l].d_array)
+                    ind_l += 2J2+1
                 end
-                ind_k += (2I2+1)*length(basis[k].d_array)
+                ind_k += 2I2+1
             end
-            ind_j += (2J1+1)*length(basis[j].d_array)
+            ind_j += 2J1+1
         end
-        ind_i += (2I1+1)*length(basis[i].d_array)
+        ind_i += 2I1+1
     end
-    results = Vector{Array{Float64, 8}}(undef, num)
+    results = Vector{Array{Float64, 4}}(undef, num)
     Threads.@threads for ind = 1:num
         results[ind] = V2e_lm(basis[Tasks[ind][1]],basis[Tasks[ind][2]],basis[Tasks[ind][3]],basis[Tasks[ind][4]],mol.rotate_coef[Tasks[ind][5]+1],mol.rotate_coef[Tasks[ind][6]+1],mol.rotate_coef[Tasks[ind][7]+1],mol.rotate_coef[Tasks[ind][8]+1])
     end
@@ -271,46 +267,44 @@ function get_v2e(mol::Molecule)
                         num += 1
                         check[i,j,k,l] = check[i,j,l,k] = check[j,i,k,l] = check[j,i,l,k] = true
                         check[k,l,i,j] = check[k,l,j,i] = check[l,k,i,j] = check[l,k,j,i] = true
-                        Tasks[num] = [i,j,k,l,I1,J1,I2,J2]
+                        
                         V2elm = results[num]
-                        for ind_a=0:length(basis[i].d_array)-1, ind_b=0:length(basis[j].d_array)-1, ind_c=0:length(basis[k].d_array)-1, ind_d=0:length(basis[l].d_array)-1 
-                            for ma=0:2I1, mb=0:2J1, mc=0:2I2, md=0:2J2
-                                ans = V2elm[ind_a+1,ind_b+1,ind_c+1,ind_d+1,ma+1,mb+1,mc+1,md+1]
-                                ind_1 = ind_i+ind_a*(2I1+1)+change[I1+1][ma+1]
-                                ind_2 = ind_j+ind_b*(2J1+1)+change[J1+1][mb+1]
-                                ind_3 = ind_k+ind_c*(2I2+1)+change[I2+1][mc+1]
-                                ind_4 = ind_l+ind_d*(2J2+1)+change[J2+1][md+1]
-                                V2e[ind_1,ind_2,ind_3,ind_4] = ans
+                        
+                        for ma=0:2I1, mb=0:2J1, mc=0:2I2, md=0:2J2
+                            ans = V2elm[ma+1,mb+1,mc+1,md+1]
+                            ind_1 = ind_i+change[I1+1][ma+1]
+                            ind_2 = ind_j+change[J1+1][mb+1]
+                            ind_3 = ind_k+change[I2+1][mc+1]
+                            ind_4 = ind_l+change[J2+1][md+1]
+                            V2e[ind_1,ind_2,ind_3,ind_4] = ans
 
-                                V2e[ind_1,ind_2,ind_4,ind_3] = ans
-                                V2e[ind_2,ind_1,ind_3,ind_4] = ans
-                                V2e[ind_2,ind_1,ind_4,ind_3] = ans
+                            V2e[ind_1,ind_2,ind_4,ind_3] = ans
+                            V2e[ind_2,ind_1,ind_3,ind_4] = ans
+                            V2e[ind_2,ind_1,ind_4,ind_3] = ans
 
-                                V2e[ind_3,ind_4,ind_1,ind_2] = ans
-                                V2e[ind_3,ind_4,ind_2,ind_1] = ans
-                                V2e[ind_4,ind_3,ind_1,ind_2] = ans
-                                V2e[ind_4,ind_3,ind_2,ind_1] = ans
-                            end
-                        end                 
+                            V2e[ind_3,ind_4,ind_1,ind_2] = ans
+                            V2e[ind_3,ind_4,ind_2,ind_1] = ans
+                            V2e[ind_4,ind_3,ind_1,ind_2] = ans
+                            V2e[ind_4,ind_3,ind_2,ind_1] = ans
+                        end                
                     end
-                    ind_l += (2J2+1)*length(basis[l].d_array)
+                    ind_l += 2J2+1
                 end
-                ind_k += (2I2+1)*length(basis[k].d_array)
+                ind_k += 2I2+1
             end
-            ind_j += (2J1+1)*length(basis[j].d_array)
+            ind_j += 2J1+1
         end
-        ind_i += (2I1+1)*length(basis[i].d_array)
+        ind_i += 2I1+1
     end
     return V2e
 end
 
 function get_v2e_single(mol::Molecule)
-    basis = mol.basis
+    basis = mol.basis_
     V2e = zeros(Float64, (mol.basis_num, mol.basis_num, mol.basis_num, mol.basis_num))
     basis_len = length(basis)
     check = zeros(Bool, (basis_len, basis_len, basis_len, basis_len))
     change = [[0],[1,2,0],[0,1,2,3,4]]
-    
     ind_i = 1
     I1 = 0;J1 = 0;I2 = 0; J2 = 0
     for i = 1:basis_len
@@ -325,37 +319,37 @@ function get_v2e_single(mol::Molecule)
                     if !check[i,j,k,l] && I1 >= J1 && I2 >= J2 && I2+J2 >= I1+J1
                         check[i,j,k,l] = check[i,j,l,k] = check[j,i,k,l] = check[j,i,l,k] = true
                         check[k,l,i,j] = check[k,l,j,i] = check[l,k,i,j] = check[l,k,j,i] = true
-                        
                         V2elm = V2e_lm(basis[i],basis[j],basis[k],basis[l],mol.rotate_coef[I1+1],mol.rotate_coef[J1+1],mol.rotate_coef[I2+1],mol.rotate_coef[J2+1])
                         
-                        for ind_a=0:length(basis[i].d_array)-1, ind_b=0:length(basis[j].d_array)-1, ind_c=0:length(basis[k].d_array)-1, ind_d=0:length(basis[l].d_array)-1 
-                            for ma=0:2I1, mb=0:2J1, mc=0:2I2, md=0:2J2
-                                ans = V2elm[ind_a+1,ind_b+1,ind_c+1,ind_d+1,ma+1,mb+1,mc+1,md+1]
-                                ind_1 = ind_i+ind_a*(2I1+1)+change[I1+1][ma+1]
-                                ind_2 = ind_j+ind_b*(2J1+1)+change[J1+1][mb+1]
-                                ind_3 = ind_k+ind_c*(2I2+1)+change[I2+1][mc+1]
-                                ind_4 = ind_l+ind_d*(2J2+1)+change[J2+1][md+1]
-                                V2e[ind_1,ind_2,ind_3,ind_4] = ans
+                        for ma=0:2I1, mb=0:2J1, mc=0:2I2, md=0:2J2
+                            ans = V2elm[ma+1,mb+1,mc+1,md+1]
+                            ind_1 = ind_i+change[I1+1][ma+1]
+                            ind_2 = ind_j+change[J1+1][mb+1]
+                            ind_3 = ind_k+change[I2+1][mc+1]
+                            ind_4 = ind_l+change[J2+1][md+1]
+                            V2e[ind_1,ind_2,ind_3,ind_4] = ans
 
-                                V2e[ind_1,ind_2,ind_4,ind_3] = ans
-                                V2e[ind_2,ind_1,ind_3,ind_4] = ans
-                                V2e[ind_2,ind_1,ind_4,ind_3] = ans
+                            V2e[ind_1,ind_2,ind_4,ind_3] = ans
+                            V2e[ind_2,ind_1,ind_3,ind_4] = ans
+                            V2e[ind_2,ind_1,ind_4,ind_3] = ans
 
-                                V2e[ind_3,ind_4,ind_1,ind_2] = ans
-                                V2e[ind_3,ind_4,ind_2,ind_1] = ans
-                                V2e[ind_4,ind_3,ind_1,ind_2] = ans
-                                V2e[ind_4,ind_3,ind_2,ind_1] = ans
-                            end
+                            V2e[ind_3,ind_4,ind_1,ind_2] = ans
+                            V2e[ind_3,ind_4,ind_2,ind_1] = ans
+                            V2e[ind_4,ind_3,ind_1,ind_2] = ans
+                            V2e[ind_4,ind_3,ind_2,ind_1] = ans
+                        
                         end
+                        
                     end
-                    ind_l += (2J2+1)*length(basis[l].d_array)
+                    ind_l += 2J2+1
                 end
-                ind_k += (2I2+1)*length(basis[k].d_array)
+                ind_k += 2I2+1
             end
-            ind_j += (2J1+1)*length(basis[j].d_array)
+            ind_j += 2J1+1
         end
-        ind_i += (2I1+1)*length(basis[i].d_array)
+        ind_i += 2I1+1
     end
+    return V2e
 end
     
 end
