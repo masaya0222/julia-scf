@@ -1,6 +1,7 @@
 module Int1e_kin
 using JuliaSCF.Mole
 using JuliaSCF.Integral.Int1e_ovlp: S_ij
+using Lints
 
 export get_kin
 
@@ -120,6 +121,29 @@ function T_lm(basis_a::orb_detail, basis_b::orb_detail, C_a::Array{Float64,4}, C
 end
 
 function get_kin(mol::Molecule)
+    symbols = Vector{Int}()
+    cords = Vector{Vector{Float64}}()
+    X = 0.52918
+    for atom in mol.atoms
+        push!(symbols,atom.atomic_num)
+        push!(cords, atom.cord*X)
+    end
+    basis_name = ""
+    if lowercase(mol.basis_name) in ["sto3g", "sto-3g"]
+        basis_name = "sto-3g"
+    elseif lowercase(mol.basis_name) in ["631g", "6-31g"]
+        basis_name = "6-31G"
+    elseif lowercase(mol.basis_name) in ["ccpvdz","cc-pvdz"]
+        basis_name = "cc-pVDZ"
+    else
+        error("basis_name doesn't match")
+    end
+    @lints begin
+        m = Lints.Molecule(symbols, cords)
+        bas = Lints.BasisSet(basis_name, m)
+        return Lints.make_T(bas)
+    end
+
     basis = mol.basis
     T = zeros(Float64, (mol.basis_num, mol.basis_num))
     basis_len = length(basis)

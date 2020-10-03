@@ -1,14 +1,15 @@
 module Int2e
 using JuliaSCF.Mole
 using JuliaSCF.Integral.Int1e_nuc: Fn
-using JuliaSCF.Lib.Libint
+#using JuliaSCF.Lib.Libint
+using Lints
 
-export get_v2e, get_v2e_single
+export get_v2e #, get_v2e_single
 
 function INT_NCART(am::Int)
     return div((am+1)*(am+2),2)
 end
-
+#=
 function cont_V2(basis_a::orb_detail, basis_b::orb_detail, basis_c::orb_detail, basis_d::orb_detail)
     w_fact = [1,1,3,15,105]
     am1 = basis_a.orb_l; am2 = basis_b.orb_l
@@ -211,8 +212,31 @@ function V2e_lm(basis_a::orb_detail, basis_b::orb_detail, basis_c::orb_detail, b
     end
     return V2e_mamb
 end
-
+=#
 function get_v2e(mol::Molecule)
+    symbols = Vector{Int}()
+    cords = Vector{Vector{Float64}}()
+    X = 0.52918
+    for atom in mol.atoms
+        push!(symbols,atom.atomic_num)
+        push!(cords, atom.cord*X)
+    end
+    basis_name = ""
+    if lowercase(mol.basis_name) in ["sto3g", "sto-3g"]
+        basis_name = "sto-3g"
+    elseif lowercase(mol.basis_name) in ["631g", "6-31g"]
+        basis_name = "6-31G"
+    elseif lowercase(mol.basis_name) in ["ccpvdz","cc-pvdz"]
+        basis_name = "cc-pVDZ"
+    else
+        error("basis_name doesn't match")
+    end
+    @lints begin
+        m = Lints.Molecule(symbols, cords)
+        bas = Lints.BasisSet(basis_name, m)
+        return Lints.make_ERI4(bas)
+    end
+    #=
     basis = mol.basis_
     num = 0
     V2e = zeros(Float64, (mol.basis_num, mol.basis_num, mol.basis_num, mol.basis_num))
@@ -297,8 +321,9 @@ function get_v2e(mol::Molecule)
         ind_i += 2I1+1
     end
     return V2e
+    =#
 end
-
+#=
 function get_v2e_single(mol::Molecule)
     basis = mol.basis_
     V2e = zeros(Float64, (mol.basis_num, mol.basis_num, mol.basis_num, mol.basis_num))
@@ -351,5 +376,5 @@ function get_v2e_single(mol::Molecule)
     end
     return V2e
 end
-    
+=# 
 end

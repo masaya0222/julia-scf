@@ -4,8 +4,9 @@ using LinearAlgebra
 using JuliaSCF.Mole
 using JuliaSCF.Integral
 using JuliaSCF.DIIS
+using Lints
 
-export hf, run!
+export hf, run_rhf!, init_guess
 
 mutable struct hf
     mol::Molecule
@@ -149,51 +150,48 @@ function run_silence!(F::hf)
     return F.total_ene
 end
 
-function run!(F::hf)
-    max_iteration = 100
+function run_rhf!(F::hf)
+    max_iteration = 1000
+    diis_on = true
+    if F.mo_num -F.mol.occ_num <= 1
+        diis_on = false
+    end
+    flag = 0
+    num = 0
     for i = 1:max_iteration
         #@show i
         F.fock_ao = get_fock_ao!(F)
-        insert(F.diis, F.fock_ao, F.coeff)
-        F.fock_ao = return_fock(F.diis)
+        if diis_on
+            insert(F.diis, F.fock_ao, F.coeff)
+            F.fock_ao = return_fock(F.diis)
+        end
+        #F.mo_ene, F.coeff = eigenh(F.fock_ao, F.ovlp_ao)
         fock_mo = transpose(F.coeff)*F.fock_ao*F.coeff
         F.mo_ene, F.coeff = eigenh(F.fock_ao, F.ovlp_ao)
+        old_dense = copy(F.dense_ao)
         get_dense_ao!(F)
-        if converged(F, fock_mo, 1e-7)
-            break
+        if isapprox(old_dense, F.dense_ao) #&& converged(F, fock_mo, 1e-10)
+            flag += 1
+            if flag == F.diis.store_max+1
+                println("converged")
+                @show i
+                break
+            end
+        else
+            flag = 0
         end
+        num = i
+    end
+    if num == max_iteration
+        println("Not Converged")      
     end
     #@show F.mo_ene
     F.elec_ene = 1/2*tr(F.dense_ao*(F.hcore+F.fock_ao))
-    #println("HF elec energy")
-    #println(F.elec_ene)
+    println("HF elec energy")
+    println(F.elec_ene)
     F.total_ene = F.elec_ene + F.nuc_ene
     @show F.total_ene
     return F.total_ene
 end
-#=
-i = 4.0
-m1 = Molecule([atom("O",[0.0,0.0,-i/2]),atom("O",[0.0,0.0,i/2])],"sto3g")
-#kernel1 = hf(m1)
-#run!(kernel1)
 
-using PyCall
-@pyimport pyscf
-@pyimport numpy
-X = 0.52918
-mol_H2 = pyscf.gto.Mole()
-mol_H2.build(atom="O 0 0 $(-i/2*X); O 0 0 $(i/2*X) ", basis="sto3g")
-
-kernel1 = hf(m1)
-kernel1.dense_ao = pyscf.scf.hf.get_init_guess(mol_H2)
-kernel1.v2e_ao = mol_H2.intor("int2e")
-kernel1.hcore = pyscf.scf.hf.get_hcore(mol_H2)
-run!(kernel1)
-
-m = pyscf.scf.RHF(mol_H2)
-m.kernel()
-
-@show pyscf.scf.hf.energy_tot(m,dm = kernel1.dense_ao, h1e = kernel1.hcore, vhf = pyscf.scf.hf.get_veff(mol_H2, kernel1.dense_ao))
-@show m.mo_energy
-=#
 end
