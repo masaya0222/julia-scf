@@ -13,6 +13,8 @@ include("hf/hf.jl")
 export HF
 include("hf/uhf.jl")
 export UHF
+include("ci/ci.jl")
+export CI
 
 end # module
 

@@ -12,6 +12,10 @@ end
 a = car()
 a.name = "vox"
 
-b = Vector{Float64}()
-append!(b, 3.0)
-@show b
+a = Vector{Vector{Float64}}()
+b = [0.0,1.0,2.0]
+push!(a, b)
+@show a
+b[1] = 3.0
+@show a
+

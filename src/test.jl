@@ -5,10 +5,12 @@ module test
     using LinearAlgebra
     using JuliaSCF.HF
     using JuliaSCF.UHF
+    using JuliaSCF.CI
     using Plots
     using LaTeXStrings
     using Lints
     X = 0.52918
+    
     #=
     @lints begin
         mol = Lints.Molecule([1,1], [[0.0,0.0,-1.4*X],
@@ -49,36 +51,44 @@ module test
     dis = []
     
     #H_ene = -0.466581849557275 #sto3g
-    #H_ene = -0.49823291072907 #6-31g
-    for i in 1.5:0.1:4
-    #for i = 3.0
+    H_ene = -0.49823291072907 #6-31g
+    for i in 0.5:0.05:4
+    #for i = 1.1
         @show i
         
-        m1 = Molecule([atom("Li",[0.0,0.0,-i/2]),atom("Li",[0.0,0.0,i/2])],"6-31g")
+        m1 = Molecule([atom("H",[0.0,0.0,-i/2]),atom("H",[0.0,0.0,i/2])],"6-31g")
         kernel1 = hf(m1)
-        ene1 = run_rhf!(kernel1)
-        #v = Int2e.get_v2e(m1)
-        #@show v[1,1,1,:]
-        append!(enes1, ene1)
+        ene = run_rhf!(kernel1)
+        kernel_ci1 = ci(kernel1)
+        ene1, corr1 = run_ci!(kernel_ci1)
+        append!(enes1, ene-2*H_ene)
         
-        
+        #=
         mol = pyscf.gto.Mole()
-        mol.build(atom="Li 0 0 $(-i*X/2); Li 0 0 $(i*X/2)", basis="6-31g")
-        m = pyscf.scf.RHF(mol)
-        ene2 = m.kernel()
-        append!(enes2, ene2)
-        #v1 = mol.intor("int2e")
-        #@show v1[1,1,1,:]
+        mol.build(atom="H 0 0 $(-i*X/2); H 0 0 $(i*X/2)", basis="6-31g")
+        mf = mol.HF().run()
+        mycc = mf.CISD().run()
+        corr2 = mycc.e_corr
+        ene2 = mycc.e_tot
+        =#
+        
+        m2 = Molecule([atom("H",[0.0,0.0,-i/2]),atom("H",[0.0,0.0,i/2])],"6-31g")
+        kernel2 = hf(m2)
+        ene2 = run_rhf!(kernel2)
+        kernel_ci2 = ci(kernel2)
+        ene2, corr2 = run_ci!(kernel_ci2)
+        
+        append!(enes2, ene2-2*H_ene)
         append!(dis, i)
     end
     
-    label = ["HF (6-31g)" "UHF (6-31g)"]
+    label = ["RHF (6-31g)" "CISD (6-31g)"]
     xlabel=L"R (a.u.)"
-    ylabel=L"E(H_2)-2E(H) (a.u.)"
+    ylabel=L"E(H_2)-2E(H)(a.u.)"
     
-    display(plot(dis, [enes1 enes2], label = label))#, xlabel=xlabel, ylabel=ylabel))#, dpi=500))
+    display(plot(dis, [enes1 enes2], label = label, xlabel=xlabel, ylabel=ylabel, dpi=500))
     
-    #savefig("H2_6-31g.png")
+    savefig("H2_CISD_6-31g.png")
     
     #display(plot(dis, ex))
     
